@@ -1,4 +1,5 @@
 const express = require('express');
+
 //You are requiring the 'express' module, which is a popular Node.js module used to create web applications and APIs.
 const app = express();
 // "const app" => used as a convention to represent an instance of your Express.js application. This instance will be used to configure routes, middleware, and other settings for your web application.
@@ -11,9 +12,19 @@ const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 
 // 1) MIDDLEWARES
-// all the middleware here ` app.use ` are part of the middleware stack and are executed in order as they are written
-app.use(morgan('tiny'));
+// all the middleware here 'app.use' are part of the middleware stack and are executed in order as they are written
+console.log(process.env.NODE_ENV);
+if (process.env.NODE_ENV === 'development') {
+    app.use(morgan('dev'));
+    // `dev` -> The log entries typically include information such as the HTTP method, URL, status code, response time, and response size.
+}
+
+// app.use(morgan('tiny'));
+//     //used for logging HTTP request details
+
 app.use(express.json());
+//Middleware to parse JSON request bodies
+
 // app.use((req, res, next) => {
 //     console.log('Hello from the  middleware👋');
 //     next();
