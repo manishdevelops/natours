@@ -13,6 +13,8 @@ const userRouter = require('./routes/userRoutes');
 
 // 1) MIDDLEWARES
 // all the middleware here 'app.use' are part of the middleware stack and are executed in order as they are written
+
+//accessing the env variable
 console.log(process.env.NODE_ENV);
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
