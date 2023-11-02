@@ -85,7 +85,7 @@ exports.getAllTours = async (req, res) => {
 
         //Executes query
         const features = new APIFeatures(Tour.find(), req.query).filter().sort().limitFields().paginate();
-        console.log(features.query);
+        // console.log(features.query);
         const tours = await features.query;
         //                  or
         // const tours = await Tour.find({
@@ -218,3 +218,48 @@ exports.deleteTour = async (req, res) => {
         });
     }
 };
+
+exports.getTourStats = async (req, res) => {
+    try {
+        // aggregate pipeline is bit like a regular query and so using the aggregation pipeline is just a bit like doing a regular query. The difference is that in aggregrations, we can manipulate the data in a couple of different steps.we will pass in an array which will have lots of stages.Each element in this array will be one of the stages
+        const stats = await Tour.aggregate([
+            {
+                $match: { ratingsAverage: { $gte: 4.5 } } //select docs which has gte 4.5
+            },
+            {
+                $group: {
+                    //allows to group docs together using accumulators, and an accumulator is for example, even calculating  an average. So, if we have five tours, each of them has a rating, we can then calculate the average rating using group.
+                    // _id: '$ratingsAverage',
+                    // _id: null,
+                    _id: { $toUpper: '$difficulty' },
+                    numTours: { $sum: 1 },
+                    numRatings: { $sum: '$ratingsQuantity' },
+                    avgRatings: { $avg: '$ratingsAverage' },
+                    avgPrice: { $avg: '$price' },
+                    minPrice: { $min: '$price' },
+                    maxPrice: { $max: '$price' },
+                }
+            },
+            {
+                $sort: { avgPrice: 1 }
+            },
+            // {
+            //     $match: { _id: { $ne: 'EASY' } }
+            // }
+
+
+        ]);
+
+        res.status(200).json({
+            status: 'success',
+            data: {
+                stats
+            }
+        })
+    } catch (err) {
+        res.status(400).json({
+            status: 'fail',
+            message: err
+        });
+    }
+}
