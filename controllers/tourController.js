@@ -224,14 +224,17 @@ exports.getTourStats = async (req, res) => {
         // aggregate pipeline is bit like a regular query and so using the aggregation pipeline is just a bit like doing a regular query. The difference is that in aggregrations, we can manipulate the data in a couple of different steps.we will pass in an array which will have lots of stages.Each element in this array will be one of the stages
         const stats = await Tour.aggregate([
             {
-                $match: { ratingsAverage: { $gte: 4.5 } } //select docs which has gte 4.5
+                $match: { ratingsAverage: { $gte: 4.5 } } //select/filter docs which has gte 4.5
             },
             {
                 $group: {
-                    //allows to group docs together using accumulators, and an accumulator is for example, even calculating  an average. So, if we have five tours, each of them has a rating, we can then calculate the average rating using group.
-                    // _id: '$ratingsAverage',
+                    //groupt -> allows to group docs together using accumulators, and an accumulator is for example, even calculating  an average. So, if we have five tours, each of them has a rating, we can then calculate the average rating using group.
+                    _id: '$ratingsAverage',
+
+                    //we say null here beacuase we want to have everything in one group so that we caluculate the statistics  for all tours together and not separatedd by groups.
                     // _id: null,
-                    _id: { $toUpper: '$difficulty' },
+
+                    // _id: { $toUpper: '$difficulty' },
                     numTours: { $sum: 1 },
                     numRatings: { $sum: '$ratingsQuantity' },
                     avgRatings: { $avg: '$ratingsAverage' },
@@ -243,9 +246,9 @@ exports.getTourStats = async (req, res) => {
             {
                 $sort: { avgPrice: 1 }
             },
-            // {
-            //     $match: { _id: { $ne: 'EASY' } }
-            // }
+            {
+                $match: { _id: { $ne: 'EASY' } }
+            }
 
 
         ]);
@@ -261,5 +264,60 @@ exports.getTourStats = async (req, res) => {
             status: 'fail',
             message: err
         });
+    }
+}
+
+exports.getMonthlyPlan = async (req, res) => {
+    try {
+        const year = req.params.year * 1;
+        const plan = await Tour.aggregate([
+            {
+                // $unwind -> Deconstructs an array field from the input documents to output a document for each element. Each output document is the input document with the value of the array field replaced by the element.
+                $unwind: '$startDates'
+            },
+            {
+                $match: {
+                    startDates: {
+                        $gte: new Date(`${year}-01-01`),
+                        $lte: new Date(`${year}-12-31`),
+                        //only documents that is 2021 yr
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: { $month: '$startDates' }, // grouping by month of the date
+                    numTourStarts: { $sum: 1 }, // counts the  documents of group 
+                    tours: { $push: '$name' } // created array with fieldname as element
+                }
+            },
+            {
+                $addFields: { month: '$_id' } // add field
+            },
+            {
+                $project: {
+                    _id: 0 // removes id
+                }
+            },
+            {
+                $sort: { numTourStarts: -1 } // sort in desc
+            },
+            {
+                $limit: 12  // total fields 
+            }
+
+        ]);
+        res.status(200).json({
+            status: 'success',
+            data: {
+                plan
+            }
+        })
+
+    } catch (err) {
+        res.status(404).json({
+            status: 'fail',
+            message: err
+        })
     }
 }
