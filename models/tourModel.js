@@ -27,7 +27,7 @@ const tourSchema = new mongoose.Schema({
     },
     ratingsQuantity: {
         type: Number,
-        deafault: 0
+        default: 0
     },
     price: {
         type: Number,
@@ -52,10 +52,24 @@ const tourSchema = new mongoose.Schema({
     // an array of number od Strings
     createdAt: {
         type: Date,
-        default: Date.now()
+        default: Date.now,
+        select: false //the createdAt will never be selected when accessing 
     },
     startDates: [Date]
+}, {
+    toJSON: { virtuals: true },  // each time that the data is outputted as JSON, we want virtuals tobe true. So basically virtuals to be the part of the output.
+    toObject: { virtuals: true }
 });
+
+
+// this virtual data is not going to be saved in DB 
+// durationWeeks -> virtual property name
+// get -> getter function
+// this -> pointing  current  document
+// we cannot use this virtual property here in a query bcz they are technically not the part of the DB
+tourSchema.virtual('durationWeeks').get(function () {
+    return this.duration / 7;
+})
 
 //CREATING MODEL FOR tourSchema
 //Model name of the first char should be capital
