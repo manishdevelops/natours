@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const slugify = require('slugify');
 
 //CREATING SCHEMA
 const tourSchema = new mongoose.Schema({
@@ -9,6 +10,7 @@ const tourSchema = new mongoose.Schema({
         required: [true, 'A tour must have a name'],
         unique: true
     },
+    slug: String,
     duration: {
         type: Number,
         required: [true, 'A tour must have a duration!']
@@ -57,7 +59,7 @@ const tourSchema = new mongoose.Schema({
     },
     startDates: [Date]
 }, {
-    toJSON: { virtuals: true },  // each time that the data is outputted as JSON, we want virtuals tobe true. So basically virtuals to be the part of the output.
+    toJSON: { virtuals: true },  // each time that the data is outputted as JSON, we want virtuals to be true. So basically virtuals to be the part of the output.
     toObject: { virtuals: true }
 });
 
@@ -69,6 +71,31 @@ const tourSchema = new mongoose.Schema({
 // we cannot use this virtual property here in a query bcz they are technically not the part of the DB
 tourSchema.virtual('durationWeeks').get(function () {
     return this.duration / 7;
+});
+
+//this is pre middleware that gonna run before an actual event and that event is 'save()' & 'create()' event. the callback fn will be called before saving a document in the DB and so we can perform some act on this data ebfore saving to the db.
+// DOCUMENT MIDDLEWARE: runs before .save() and .create() not for insertOne insertMany like these events 
+//next -> just like express, mongoose has next to call next middleware
+tourSchema.pre('save', function (next) {
+    // console.log(this);
+    // this ->  currently processed document
+
+    this.slug = slugify(this.name, { lower: true });
+    next();
+});
+
+// we can have multiple pre and post middlewares
+// tourSchema.pre('save', function (next) {
+//     console.log('will save document');
+//     next();
+// });
+
+// This post middleware that gaonna run after saving the document in the db. on 'save' event. It has also accesed to the saved doc.
+
+tourSchema.post('save', function (doc, next) {
+    // here no longer has accessed to this keyword
+    console.log(doc);
+    next();
 })
 
 //CREATING MODEL FOR tourSchema
