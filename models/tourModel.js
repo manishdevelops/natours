@@ -78,7 +78,7 @@ tourSchema.virtual('durationWeeks').get(function () {
 });
 
 //this is pre middleware that gonna run before an actual event and that event is 'save()' & 'create()' event. the callback fn will be called before saving a document in the DB and so we can perform some act on this data ebfore saving to the db.
-// DOCUMENT MIDDLEWARE: runs before .save() and .create() not for insertOne insertMany like these events 
+//1) DOCUMENT MIDDLEWARE: runs before .save() and .create() not for insertOne insertMany like these events 
 //next -> just like express, mongoose has next to call next middleware
 tourSchema.pre('save', function (next) {
     // console.log(this);
@@ -101,7 +101,7 @@ tourSchema.pre('save', function (next) {
 //     next();
 // });
 
-//QUERY MIDDLEWARE
+//2) QUERY MIDDLEWARE
 //executes before processing a query
 // /^find/ -> this will trigger the methods that start with find like findOne, findByIdAndUpdate etc.
 tourSchema.pre(/^find/, function (next) {
@@ -118,6 +118,14 @@ tourSchema.pre(/^find/, function (next) {
 //     console.log(docs);
 //     next();
 // });
+
+//3) AGGREGATE MIDDLEWARE : executes before aggregation happens
+tourSchema.pre('aggregate', function (next) {
+    // console.log(this);
+    // this-> current aggregate OBJECT
+    this.pipeline().unshift({ $match: { secretTour: { $ne: true } } }); //unshift -> adding stage -> .filter docs which should not be secreTour:true
+    next();
+});
 
 //CREATING MODEL FOR tourSchema
 //Model name of the first char should be capital
