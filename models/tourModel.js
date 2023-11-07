@@ -57,7 +57,11 @@ const tourSchema = new mongoose.Schema({
         default: Date.now,
         select: false //the createdAt will never be selected when accessing 
     },
-    startDates: [Date]
+    startDates: [Date],
+    secretTour: {
+        type: Boolean,
+        default: false,
+    }
 }, {
     toJSON: { virtuals: true },  // each time that the data is outputted as JSON, we want virtuals to be true. So basically virtuals to be the part of the output.
     toObject: { virtuals: true }
@@ -91,12 +95,29 @@ tourSchema.pre('save', function (next) {
 // });
 
 // This post middleware that gaonna run after saving the document in the db. on 'save' event. It has also accesed to the saved doc.
+// tourSchema.post('save', function (doc, next) {
+//     // here no longer has accessed to this keyword
+//     console.log(doc);
+//     next();
+// });
 
-tourSchema.post('save', function (doc, next) {
-    // here no longer has accessed to this keyword
-    console.log(doc);
+//QUERY MIDDLEWARE
+//executes before processing a query
+// /^find/ -> this will trigger the methods that start with find like findOne, findByIdAndUpdate etc.
+tourSchema.pre(/^find/, function (next) {
+    //this -> query OBJECT
+    this.find({ secretTour: { $ne: true } });
+    // this.start = Date.now();
     next();
-})
+});
+
+// after execution of query
+//docs -> all documents in the db
+// tourSchema.post(/^find/, function (docs, next) {
+//     console.log(`Query took ${Date.now() - this.start} milliseconds`);
+//     console.log(docs);
+//     next();
+// });
 
 //CREATING MODEL FOR tourSchema
 //Model name of the first char should be capital
