@@ -17,7 +17,7 @@ const userRouter = require('./routes/userRoutes');
 //accessing the env variable
 console.log(process.env.NODE_ENV);
 if (process.env.NODE_ENV === 'development') {
-    app.use(morgan('dev'));
+    // app.use(morgan('dev'));
     // `dev` -> The log entries typically include information such as the HTTP method, URL, status code, response time, and response size.
 }
 
@@ -67,5 +67,30 @@ app.use((req, res, next) => {
 
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
+
+
+// If we are able to reach this point here it means that the request req res cycle was not yet finished at this point in our code 
+// app.use('*', (req, res, next) => { //the routes that are not handled by the above routes
+//     // * -> stands for all methods like get, post, put, patch etc
+//     res.status(404).json({
+//         status: 'fail',
+//         message: `Can't find ${req.originalUrl} on this server!`
+//         //req.original -> pathname that was requested
+//     });
+// });
+app.use((req, res, next) => {
+    const err = new Error(`Not Found - ${req.originalUrl}`);
+    err.status = 404;
+    next(err);
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    res.status(err.status || 500).json({
+        error: {
+            message: err.message,
+        },
+    });
+});
 
 module.exports = app;
