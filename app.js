@@ -5,6 +5,8 @@ const app = express();
 // "const app" => used as a convention to represent an instance of your Express.js application. This instance will be used to configure routes, middleware, and other settings for your web application.
 // "express()" => This is a function call that creates a new instance of the Express application. When you call express(), it returns an Express application object, which you assign to the app variable. This object is the core of your web application and provides methods and settings for handling HTTP requests, defining routes, and more.
 const morgan = require('morgan');
+const AppError = require('./utils/appError');
+const globalErrorController = require('./controllers/errorController');
 
 app.use(express.static(`${__dirname}/public`));
 
@@ -79,22 +81,16 @@ app.all('*', (req, res, next) => { //the routes that are not handled by the abov
     // });
 
     //Creating an error
-    const err = new Error(`Can't find ${req.originalUrl} on this server!`);
-    err.status = 'fail'; // error properties
-    err.statusCode = 404;
-    next(err); // when we pass anything into next, it will assume that it is an error, and It will then skip all the other middlewares in the middleware stack and sent the error that we passed into our global error handling middleware, which will then be executed.
+    // const err = new Error(`Can't find ${req.originalUrl} on this server!`);
+    // err.status = 'fail'; // error properties
+    // err.statusCode = 404;
+    // next(err); // when we pass anything into next, it will assume that it is an error, and It will then skip all the other middlewares in the middleware stack and sent the error that we passed into our global error handling middleware, which will then be executed.
+
+    next(new AppError(`Can't find ${req.originalUrl} on this server!`));
 });
 
 //we have to give 4 arguments to this middleware fn and express will automatically recognize it as an error handling middleware and therefore , only call it when  there is an error
-app.use((err, req, res, next) => {
-    err.statusCode = err.statusCode || 500;
-    err.status = err.status || 'error';
-
-    res.status(err.statusCode).json({
-        status: err.status,
-        message: err.message
-    });
-});
+app.use(globalErrorController);
 
 
 module.exports = app;
