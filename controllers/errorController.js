@@ -5,6 +5,14 @@ const handleCastErrorDB = err => {
     return new AppError(message, 400);
 }
 
+const handleDuplicateFieldsDB = err => {
+    // console.log(err);
+    // comes from  error object
+    const [errorField, errorValue] = Object.entries(err.keyValue).flat();
+    const message = `Duplicate '${errorField}' value entered as '${errorValue}'.`
+    return new AppError(message, 400);
+}
+
 const sendErrorDev = (err, res) => {
     res.status(err.statusCode).json({
         status: err.status,
@@ -41,14 +49,13 @@ module.exports = (err, req, res, next) => {
     // console.log(err.stack); // shows where the error has happened
     err.statusCode = err.statusCode || 500;
     err.status = err.status || 'error';
-
     if (process.env.NODE_ENV === 'development') {
         sendErrorDev(err, res);
     } else if (process.env.NODE_ENV === 'production') {
         let error = { ...err, name: err.name };
-        if (error.name === 'CastError') {
-            error = handleCastErrorDB(error);
-        };
+        if (error.name === 'CastError') error = handleCastErrorDB(error);
+        if (error.code === 11000) error = handleDuplicateFieldsDB(error);
+
         sendErrorProd(error, res);
     }
 }
