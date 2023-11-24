@@ -32,7 +32,8 @@ const userSchema = new mongoose.Schema({
             },
             message: 'Passwords are not same!'
         }
-    }
+    },
+    passwordChangedAt: Date
 });
 
 // executes between getting the data and saving it to DB. PERFECT TIME TO MANIPULATE DATA
@@ -47,6 +48,17 @@ userSchema.pre('save', async function (next) {
 // this is the instance method that is gonna be available to all the documents of a cretain collection
 userSchema.methods.correctPassword = async function (candidatePassword, userPassword) {
     return await bcrypt.compare(candidatePassword, userPassword); // return true if matches otherwise false
+}
+
+// check if user has not changed password after token was issued
+// JWTTimeStamp -> The time when token was issued
+userSchema.methods.changePasswordAfter = function (JWTTimestamp) {
+    if (this.passwordChangedAt) {
+        const chnagedTimeStamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
+        console.log(this.passwordChangedAt, JWTTimestamp);
+        return JWTTimestamp < chnagedTimeStamp;  // 100 < 200
+    }
+    return false; // NOT changed
 }
 
 const User = mongoose.model('User', userSchema);
