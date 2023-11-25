@@ -15,7 +15,11 @@ const userSchema = new mongoose.Schema({
         validate: [validator.isEmail, 'Please provide a valid email']
     },
     photo: String,
-
+    role: {
+        type: String,
+        enum: ['user', 'guide', 'lead-guide', 'admin'], //specific to the app's domain
+        default: 'user'
+    },
     password: {
         type: String,
         required: [true, 'Please provide your password'],
@@ -52,11 +56,12 @@ userSchema.methods.correctPassword = async function (candidatePassword, userPass
 
 // check if user has not changed password after token was issued
 // JWTTimeStamp -> The time when token was issued
+// this -> current doc
 userSchema.methods.changePasswordAfter = function (JWTTimestamp) {
     if (this.passwordChangedAt) {
-        const chnagedTimeStamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
-        console.log(this.passwordChangedAt, JWTTimestamp);
-        return JWTTimestamp < chnagedTimeStamp;  // 100 < 200
+        const changedTimeStamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
+        // console.log(this.passwordChangedAt, JWTTimestamp);
+        return JWTTimestamp < changedTimeStamp;  // 100 < 200
     }
     return false; // NOT changed
 }
