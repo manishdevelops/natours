@@ -1,3 +1,4 @@
+const crypto = require('crypto'); // generates random token
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcrypt');
@@ -37,7 +38,9 @@ const userSchema = new mongoose.Schema({
             message: 'Passwords are not same!'
         }
     },
-    passwordChangedAt: Date
+    passwordChangedAt: Date,
+    passwordResetToken: String,
+    passwordResetExpires: Date
 });
 
 // executes between getting the data and saving it to DB. PERFECT TIME TO MANIPULATE DATA
@@ -64,6 +67,14 @@ userSchema.methods.changePasswordAfter = function (JWTTimestamp) {
         return JWTTimestamp < changedTimeStamp;  // 100 < 200
     }
     return false; // NOT changed
+}
+
+userSchema.methods.createPasswordResetToken = function () {
+    const resetToken = crypto.randomBytes(32).toString('hex'); //sending this token to user to reset password
+    this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex'); // encrypting to protect from attackers
+    console.log({ resetToken }, this.passwordResetToken);
+    this.passwordResetExpires = Date.now() + 10 * 10 * 60 * 1000;
+    return resetToken;
 }
 
 const User = mongoose.model('User', userSchema);
