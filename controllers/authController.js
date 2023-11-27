@@ -97,7 +97,6 @@ exports.restrictTo = (...roles) => {
 exports.forgotPassword = catchAsync(async (req, res, next) => {
     //1)Get user based on POSTed email
     const user = await User.findOne({ email: req.body.email });
-    console.log(user)
     if (!user) {
         return next(new AppError('There is no user with this email address', 404));
     }
@@ -132,24 +131,27 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 
 });
 
-exports.resetPassword = async (req, res, next) => {
+exports.resetPassword = catchAsync(async (req, res, next) => {
     // 1) get user based on the token
-    const hashedToken = cryptocreateHash('sha256').update(req.params.token).digest('hex');
+    const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex'); //encrypt again bcz plain token has been sent and encrypted is stored in the db
 
     const user = await User.findOne(
-        { passwordResetToken: hashedToken },
-        { passwordResetExpires: { $gte: Date.now() } } // behind the scenes mongoDB doing everything
-    );
+        {
+            passwordResetToken: hashedToken,
+            passwordResetExpires: { $gt: Date.now() } // behind the scenes mongoDB doing everything
+        });
 
     // 2) If token has not expired, and there is user, set the new password
     if (!user) {
         return next(new AppError('Token is invalid or has expired', 400));
     }
-    user.password = req.body.passwprd;
-    user.confirmPassword = req.body.confirmPassword;
+    console.log(user)
+
+    user.password = req.body.password;
+    user.passwordConfirm = req.body.passwordConfirm;
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
-    await user.save();
+    await user.save(); // now we want to validate so , not used 'validateBeforeSave: false'
 
     const token = signToken(user._id);
     res.status(200).json({
@@ -157,5 +159,5 @@ exports.resetPassword = async (req, res, next) => {
         token
     });
 
-}
+});
 
