@@ -12,6 +12,18 @@ const signToken = id => {
     //{id:id} === {id}
 }
 
+const createSendToken = (user, statusCode, res) => {
+    const token = signToken(user._id);
+
+    res.status(statusCode).json({
+        status: 'success',
+        token,
+        data: {
+            user: user
+        }
+    });
+}
+
 exports.signup = catchAsync(async (req, res, next) => {
     const newUser = await User.create({
         name: req.body.name,
@@ -22,16 +34,7 @@ exports.signup = catchAsync(async (req, res, next) => {
         role: req.body.role
     });
 
-    const token = signToken(newUser._id);
-
-    //201 -> the request has succeeded and has led to the creation of a resource.
-    res.status(201).json({
-        status: 'success',
-        token,
-        data: {
-            user: newUser
-        }
-    });
+    createSendToken(newUser, 201, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -50,11 +53,7 @@ exports.login = catchAsync(async (req, res, next) => {
     }
 
     // 3) If everything is ok send token to client
-    const token = signToken(user._id);
-    res.status(200).json({
-        status: 'success',
-        token
-    });
+    createSendToken(user, 200, res);
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
@@ -77,7 +76,7 @@ exports.protect = catchAsync(async (req, res, next) => {
 
     // 4) Check if user changed password after the token was issued
     if (freshUser.changePasswordAfter(decoded.iat)) {
-        return next(new AppError('User recently changed password! Please login in again!', 401));
+        return next(new AppError('User recently changed password! Please log in again!', 401));
     }
 
     req.user = freshUser; // for fututre purpose
@@ -103,7 +102,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 
     //2) Generate the random reset token
     const resetToken = user.createPasswordResetToken();
-    await user.save({ validateBeforeSave: false }); // we manipulated the doc so wee need to save;
+    await user.save({ validateBeforeSave: false }); // we manipulated the doc so we need to save;
     // validateBeforeSave: false -> this will deactivate all the validators that we specified in our schema
 
     // 3) Send it to user's email
@@ -133,7 +132,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 
 exports.resetPassword = catchAsync(async (req, res, next) => {
     // 1) get user based on the token
-    const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex'); //encrypt again bcz plain token has been sent and encrypted is stored in the db
+    const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex'); //encrypt again bcz plain token has been sent and encrypted one is stored in the db
 
     const user = await User.findOne(
         {
@@ -145,7 +144,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     if (!user) {
         return next(new AppError('Token is invalid or has expired', 400));
     }
-    console.log(user)
+    // console.log(user)
 
     user.password = req.body.password;
     user.passwordConfirm = req.body.passwordConfirm;
@@ -153,11 +152,27 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     user.passwordResetExpires = undefined;
     await user.save(); // now we want to validate so , not used 'validateBeforeSave: false'
 
-    const token = signToken(user._id);
-    res.status(200).json({
-        status: 'success',
-        token
-    });
+    createSendToken(user, 200, res);
 
+});
+
+// updating password of logged in user
+exports.updatePassword = catchAsync(async (req, res, next) => {
+    // 1) Get user from collection
+    const user = await User.findById(req.user.id).select('+password');
+    // console.log(req.user);
+
+    // 2) Check if POSTed current password is correct
+    if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
+        return next(new AppError('Your current password is wrong', 401));
+    }
+
+    // 3) If so, update password
+    user.password = req.body.password;
+    user.passwordConfirm = req.body.passwordConfirm;
+    await user.save();
+
+    // 4) Log user in, send JWT
+    createSendToken(user, 200, res);
 });
 
