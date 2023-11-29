@@ -40,13 +40,21 @@ exports.updateMe = catchAsync(async (req, res, next) => {
         runValidators: true // instructs Mongoose to run validation on the fields specified in the update operation, since filterBody only contains the 'name' and 'email' fields, the validators will only run for those fields.
     });
 
-
     res.status(200).json({
         status: 'success',
         data: {
             user: updatedUser
         }
     });
+});
+
+exports.deleteMe = catchAsync(async (req, res, next) => {
+    await User.findByIdAndUpdate(req.user.id, { active: false });
+
+    res.status(204).json({
+        status: 'error',
+        data: null
+    })
 });
 
 exports.getUser = (req, res) => {
