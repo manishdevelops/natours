@@ -1,10 +1,10 @@
 const express = require('express');
-
 //You are requiring the 'express' module, which is a popular Node.js module used to create web applications and APIs.
 const app = express();
 // "const app" => used as a convention to represent an instance of your Express.js application. This instance will be used to configure routes, middleware, and other settings for your web application.
 // "express()" => This is a function call that creates a new instance of the Express application. When you call express(), it returns an Express application object, which you assign to the app variable. This object is the core of your web application and provides methods and settings for handling HTTP requests, defining routes, and more.
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit'); // counts request from same IP 
 const AppError = require('./utils/appError');
 const globalErrorController = require('./controllers/errorController');
 
@@ -13,7 +13,7 @@ app.use(express.static(`${__dirname}/public`));
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 
-// 1) MIDDLEWARES
+// 1) GLOBAL MIDDLEWARES
 // all the middleware here 'app.use' are part of the middleware stack and are executed in order as they are written
 
 //accessing the env variable
@@ -23,8 +23,15 @@ if (process.env.NODE_ENV === 'development') {
     // `dev` -> The log entries typically include information such as the HTTP method, URL, status code, response time, and response size.
 }
 
+const limiter = rateLimit({
+    max: 100,
+    windowMs: 60 * 60 * 1000,
+    message: 'Too many requests from this IP, Please try again in an hour!'
+});
+app.use('/api', limiter); // counts every request with route `/api`
+
 // app.use(morgan('tiny'));
-//     //used for logging HTTP request details
+//used for logging HTTP request details
 
 app.use(express.json());
 //Middleware to parse JSON request bodies
@@ -32,11 +39,12 @@ app.use(express.json());
 // app.use((req, res, next) => {
 //     console.log('Hello from the  middleware👋');
 //     next();
-//     //we need to call the 'next()', if we didnt call the 'next()' then the request, response cycle would be stuck at this point we wouldn't be move on and we would never ever send back a response to the client
+//     //     //we need to call the 'next()', if we didnt call the 'next()' then the request, response cycle would be stuck at this point we wouldn't be move on and we would never ever send back a response to the client
 // });
 
 app.use((req, res, next) => {
     req.requestTime = new Date().toISOString();
+    // console.log(req.headers);
     next();
 });
 
