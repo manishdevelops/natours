@@ -6,10 +6,12 @@ const app = express();
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit'); // counts request from same IP
 const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
+const hpp = require('hpp');
+
 const AppError = require('./utils/appError');
 const globalErrorController = require('./controllers/errorController');
-
-
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 
@@ -39,6 +41,25 @@ app.use('/api', limiter); // counts every request with route `/api`
 
 //Middleware to parse JSON request bodies, read data from body into req.body
 app.use(express.json({ limit: '10kb' })); // limit size of data to be accepted. if data > 10 kb not accepted
+
+// Data sanitization against NoSQL query middleware
+app.use(mongoSanitize()); // mongoSanitize returns a middleware fn. This middleware look at the body, the request query string and also Request.params and then it will filter out all of the '$' signs and '.'
+
+// Data sanitization
+app.use(xss()); // imagine that an attacker would try to insert some malicious HTML code with some JavaScript code attached to it. If that would then later be injected into our HTML site, it could really create some damage then. Using this middleware we prevent that by converting all these HTML symbols
+
+// Prevent paramater pollution
+app.use(hpp({
+    whitelist: [
+        'duration',
+        'ratingsAverage',
+        'ratingsQuantity',
+        'maxGroupSize',
+        'difficulty',
+        'price'
+    ]
+})
+);  // clears up the duplicate query string
 
 //serving static files
 app.use(express.static(`${__dirname}/public`));
