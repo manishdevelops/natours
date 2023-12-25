@@ -1,12 +1,13 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
+// const validator = require('validator');
+// const User = require('./userModel');
 
 //CREATING SCHEMA
 const tourSchema = new mongoose.Schema({
     // name: String
     name: {
         type: String,
-        //required is validator
         required: [true, 'A tour must have a name'], //a validator
         unique: true, // not a validator
         trim: true,
@@ -26,7 +27,7 @@ const tourSchema = new mongoose.Schema({
         type: String,
         required: [true, 'A tour must have a difficulty'],
         enum: {  // only for strings
-            values: ['easy', 'medium', 'difficulty'], // this should be the values 
+            values: ['easy', 'medium', 'difficult'], // this should be the values 
             message: 'Difficulty is either: easy, medium, difficult'
         }
     },
@@ -44,7 +45,16 @@ const tourSchema = new mongoose.Schema({
         type: Number,
         required: [true, 'A tour must have a price']
     },
-    priceDiscount: Number,
+    priceDiscount: {
+        type: Number,
+        validate: {
+            validator: function (val) { // priceDiscount val
+                return val < this.price; // price value
+                // 'this' only points to current doc or new doc creation 
+            },
+            message: 'Discount price {VALUE} should be below regular price'
+        }
+    },
     summary: {
         type: String,
         trim: true,
@@ -60,7 +70,7 @@ const tourSchema = new mongoose.Schema({
         required: [true, 'A tour must have a cover image']
     },
     images: [String],
-    // an array of number od Strings
+    // an array of number of Strings
     createdAt: {
         type: Date,
         default: Date.now,
@@ -70,11 +80,46 @@ const tourSchema = new mongoose.Schema({
     secretTour: {
         type: Boolean,
         default: false,
+    },
+    // schema type object/ not for schema type options like above
+    startLocation: { // embedded object
+        //GeoJSON
+        type: {
+            type: String,
+            default: 'Point',
+            enum: ['Point'],
+            coordinates: [Number],
+        },
+        coordinates: [Number],
+        address: String,
+        description: String
+    },
+    locations: [ //always need to use this array for embedding doc. By specifying an array of objects, this will then create brand new documents inside of the parent document, which is tour 
+        {
+            type: {
+                type: String,
+                default: 'Point',
+                enum: ['Point']
+            },
+            coordinates: [Number],
+            address: String,
+            description: String,
+            day: Number
+        }
+    ],
+    guides: [
+        //we expect a type of each of the elements in the guides array to be a MongoDB ID
+        {
+            type: mongoose.Schema.ObjectId,
+            ref: 'User' // Now, don't need to import User explicitly, Mongoose will understand the reference and associate it with the "User" model.
+        }
+    ]
+},
+    {
+        toJSON: { virtuals: true },  // each time that the data is outputted as JSON, we want virtuals to be true. So basically virtuals to be the part of the output.
+        toObject: { virtuals: true }
     }
-}, {
-    toJSON: { virtuals: true },  // each time that the data is outputted as JSON, we want virtuals to be true. So basically virtuals to be the part of the output.
-    toObject: { virtuals: true }
-});
+);
 
 
 // this virtual data is not going to be saved in DB 
@@ -97,6 +142,21 @@ tourSchema.pre('save', function (next) {
     next();
 });
 
+
+//EMBEDDING
+// tourSchema.pre('save', async function (next) {
+//     const guidesPromise = this.guides.map(async el => await User.findById(el)); // this will return promise of every single element
+//     this.guides = await Promise.all(guidesPromise);
+//     next();
+// });
+//   OR
+// tourSchema.pre('save', async function (next) {
+//     const ids = this.guides;
+//     this.guides = await User.find({ _id: { $in: ids } });
+//     next();
+// });
+
+
 // we can have multiple pre and post middlewares
 // tourSchema.pre('save', function (next) {
 //     console.log('will save document');
@@ -117,6 +177,16 @@ tourSchema.pre(/^find/, function (next) {
     //this -> query OBJECT
     this.find({ secretTour: { $ne: true } });
     // this.start = Date.now();
+    next();
+});
+
+tourSchema.pre(/^find/, function (next) {
+    //this -> query OBJECT
+    //populates guides field with reference user
+    this.populate({
+        path: 'guides',
+        select: '-__v -passwordChangedAt' // not want these in the query
+    });
     next();
 });
 
