@@ -31,17 +31,23 @@ const reviewSchema = new mongoose.Schema({
 },
     {
         toJSON: { virtuals: true },
-        toObject: { virtuals: true }
+        toObject: { virtuals: true },
+        id: false // no duplicate id in query op
     }
 );
 
 reviewSchema.pre(/^find/, function (next) {
+    // this.populate({
+    //     path: 'tour',
+    //     select: 'name'
+    // }).populate({
+    //     path: 'user',
+    //     select: 'name photo' // name and photo
+    // });
+
     this.populate({
-        path: 'tour',
-        select: 'name'
-    }).populate({
         path: 'user',
-        select: 'name photo' // name and photo
+        select: 'name photo' // only name and photo in query op
     });
     next();
 });
