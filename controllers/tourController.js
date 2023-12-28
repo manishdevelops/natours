@@ -144,76 +144,76 @@ exports.getTour = catchAsync(async (req, res, next) => {
 });
 
 
-exports.createTour = catchAsync(async (req, res, next) => {
-    // console.log(req.body);
-    //req.body contains the JSON data sent by the client in the request body
-    //when we create new object we never specify the id of the object. The database usually takes care of it 
-    // const newId = tours[tours.length - 1].id + 1;
-    // const newTour = Object.assign({ id: newId }, req.body);
-    // tours.push(newTour);
-    // // inside callback so we asynchronously write the file 
-    // fs.writeFile(`${__dirname}/dev-data/data/tours-simple.json`, JSON.stringify(tours), err => {
-    //     res.status(201).json({
-    //         // 201 writen data successfully
-    //         status: 'success',
-    //         data: {
-    //             tour: newTour
-    //         }
-    //     });
-    // });
-    // // res.end('Done');
-    // //we always have to send something to finish the request/response cycle
+exports.createTour = factory.createOne(Tour);
+// exports.createTour = catchAsync(async (req, res, next) => {
+//     // console.log(req.body);
+//     //req.body contains the JSON data sent by the client in the request body
+//     //when we create new object we never specify the id of the object. The database usually takes care of it 
+//     // const newId = tours[tours.length - 1].id + 1;
+//     // const newTour = Object.assign({ id: newId }, req.body);
+//     // tours.push(newTour);
+//     // // inside callback so we asynchronously write the file 
+//     // fs.writeFile(`${__dirname}/dev-data/data/tours-simple.json`, JSON.stringify(tours), err => {
+//     //     res.status(201).json({
+//     //         // 201 writen data successfully
+//     //         status: 'success',
+//     //         data: {
+//     //             tour: newTour
+//     //         }
+//     //     });
+//     // });
+//     // // res.end('Done');
+//     // //we always have to send something to finish the request/response cycle
 
 
-    //earlier we used to use this method
-    // const newTour = new Tour({});
-    // newTour..save()
+//     //earlier we used to use this method
+//     // const newTour = new Tour({});
+//     // newTour..save()
 
-    // try {
-    //     //now we will use async await 
-    const newTour = await Tour.create(req.body);
-    res.status(201).json({
-        // 201 writen data successfully
-        status: 'success',
-        data: {
-            tour: newTour
-        }
-    });
-    // } catch (err) {
-    //     res.status(400).json({
-    //         status: 'fail',
-    //         message: err
-    //     })
-    // };
-});
-
-exports.updateTour = catchAsync(async (req, res, next) => {
-
-    // try {
-    const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
-        new: true,  //if true, return the modified document rather than the original
-        runValidators: true  //if true, runs update validators on this command. Update validators validate the update operation against the model's schema
-    });
-
-    if (!tour) {
-        return next(new AppError('No tour found with that ID', 404));
-    }
-
-    res.status(200).json({
-        status: 'success',
-        data: {
-            tour
-        }
-    });
-    // } catch (err) {
-    //     res.status(400).json({
-    //         status: 'fail',
-    //         message: err
-    //     });
-    // }
+//     // try {
+//     //     //now we will use async await 
+//     const newTour = await Tour.create(req.body);
+//     res.status(201).json({
+//         // 201 writen data successfully
+//         status: 'success',
+//         data: {
+//             tour: newTour
+//         }
+//     });
+//     // } catch (err) {
+//     //     res.status(400).json({
+//     //         status: 'fail',
+//     //         message: err
+//     //     })
+//     // };
+// });
 
 
-});
+exports.updateTour = factory.updateOne(Tour);
+// exports.updateTour = catchAsync(async (req, res, next) => {
+//     // try {
+//     const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
+//         new: true,  //if true, return the modified document rather than the original
+//         runValidators: true  //if true, runs update validators on this command. Update validators validate the update operation against the model's schema
+//     });
+
+//     if (!tour) {
+//         return next(new AppError('No tour found with that ID', 404));
+//     }
+
+//     res.status(200).json({
+//         status: 'success',
+//         data: {
+//             tour
+//         }
+//     });
+//     // } catch (err) {
+//     //     res.status(400).json({
+//     //         status: 'fail',
+//     //         message: err
+//     //     });
+//     // }
+// });
 
 exports.deleteTour = factory.deleteOne(Tour);
 // exports.deleteTour = catchAsync(async (req, res, next) => {

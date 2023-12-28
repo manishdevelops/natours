@@ -73,12 +73,14 @@ exports.createUser = (req, res) => {
     });
 };
 
-exports.updateUser = (req, res) => {
-    res.status(500).json({
-        status: 'error',
-        message: 'This route is not yet implemented!'
-    });
-};
+// Do not update update password with this
+exports.updateUser = factory.updateOne(User);
+// exports.updateUser = (req, res) => {
+//     res.status(500).json({
+//         status: 'error',
+//         message: 'This route is not yet implemented!'
+//     });
+// };
 
 exports.deleteUser = factory.deleteOne(User);
 // exports.deleteUser = (req, res) => {
