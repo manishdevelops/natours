@@ -9,20 +9,27 @@ const filterObj = (obj, ...allowedFields) => {
         if (allowedFields.includes(el)) newObj[el] = obj[el];
     });
     return newObj;
+
 }
 
-exports.getAllUsers = catchAsync(async (req, res, next) => {
-    const users = await User.find();
+exports.getMe = (req, res, next) => {
+    req.params.id = req.user.id;
+    next();
+}
 
-    //send response
-    res.status(200).json({
-        status: 'success',
-        results: users.length,
-        data: {
-            users
-        }
-    });
-});
+exports.getAllUsers = factory.getAll(User);
+// exports.getAllUsers = catchAsync(async (req, res, next) => {
+//     const users = await User.find();
+
+//     //send response
+//     res.status(200).json({
+//         status: 'success',
+//         results: users.length,
+//         data: {
+//             users
+//         }
+//     });
+// });
 
 exports.updateMe = catchAsync(async (req, res, next) => {
     // 1)Create error if user POSTs password data
@@ -58,18 +65,18 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
     });
 });
 
-exports.getUser = (req, res) => {
-    res.status(500).json({
-        status: 'error',
-        message: 'This route is not yet implemented!'
-    });
-};
+exports.getUser = factory.getOne(User);
+// exports.getUser = (req, res) => {
+//     res.status(500).json({
+//         status: 'error',
+//         message: 'This route is not yet implemented!'
+//     });
+// };
 
 exports.createUser = (req, res) => {
-
     res.status(500).json({
         status: 'error',
-        message: 'This route is not yet implemented!'
+        message: 'This route is not defined! Please use /signup instead'
     });
 };
 
