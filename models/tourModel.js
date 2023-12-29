@@ -108,7 +108,7 @@ const tourSchema = new mongoose.Schema({
         }
     ],
     guides: [
-        //we expect a type of each of the elements in the guides array to be a MongoDB ID
+        //expect a type of each of the elements in the guides array to be a MongoDB ID
         {
             type: mongoose.Schema.ObjectId,
             ref: 'User' // Now, don't need to import User explicitly, Mongoose will understand the reference and associate it with the "User" model.
@@ -117,10 +117,14 @@ const tourSchema = new mongoose.Schema({
 },
     {
         toJSON: { virtuals: true },  // each time that the data is outputted as JSON, we want virtuals to be true. So basically virtuals to be the part of the output.
-        toObject: { virtuals: true }
+        toObject: { virtuals: true },
+        id: false  // no duplicate id in query op
     }
 );
 
+// Adding Indexes
+tourSchema.index({ price: 1, ratingsAverage: -1 });
+tourSchema.index({ slug: 1 });
 
 // this virtual data is not going to be saved in DB 
 // durationWeeks -> virtual property name
@@ -129,6 +133,13 @@ const tourSchema = new mongoose.Schema({
 // we cannot use this virtual property here in a query bcz they are technically not the part of the DB
 tourSchema.virtual('durationWeeks').get(function () {
     return this.duration / 7;
+});
+
+// Virtual Populate
+tourSchema.virtual('reviews', {
+    ref: 'Review', // referencing Model name
+    foreignField: 'tour', //'tour' field in the 'Review' model is used to associate reviews with tours.
+    localField: '_id' // '_id' field in the 'Tour' model is used to associate tours with reviews.
 });
 
 //this is pre middleware that gonna run before an actual event and that event is 'save()' & 'create()' event. the callback fn will be called before saving a document in the DB and so we can perform some act on this data ebfore saving to the db.
@@ -185,7 +196,7 @@ tourSchema.pre(/^find/, function (next) {
     //populates guides field with reference user
     this.populate({
         path: 'guides',
-        select: '-__v -passwordChangedAt' // not want these in the query
+        select: '-__v -passwordChangedAt' // not want these in the query op
     });
     next();
 });
