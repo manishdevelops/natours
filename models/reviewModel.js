@@ -37,6 +37,9 @@ const reviewSchema = new mongoose.Schema({
     }
 );
 
+// prevent duplicate review by a user to a particular tour
+reviewSchema.index({ tour: 1, user: 1 }, { unique: true });
+
 //QUERY MIDDLEWARE
 reviewSchema.pre(/^find/, function (next) {
     // this.populate({
@@ -54,7 +57,6 @@ reviewSchema.pre(/^find/, function (next) {
     next();
 });
 
-// executes on creating review 
 // STATIC METHOD
 reviewSchema.statics.calcAverageRatings = async function (tourId) {
     // this -> Model
@@ -70,7 +72,7 @@ reviewSchema.statics.calcAverageRatings = async function (tourId) {
             }
         }
     ]);
-    console.log(stats);
+    // console.log(stats);
     if (stats.length > 0) {
         await Tour.findByIdAndUpdate(tourId, {
             ratingsQuantity: stats[0].nRating,
@@ -87,6 +89,7 @@ reviewSchema.statics.calcAverageRatings = async function (tourId) {
 };
 
 //DOCUMENT MIDDLEWARE
+//runs after creation and saving new review on tour
 reviewSchema.post('save', function () {
     // this points to the current review doc
     // constructor -> it is the model who created that document
@@ -97,15 +100,17 @@ reviewSchema.post('save', function () {
 //findByIdAndDelete
 // /^findOneAnd/ -> this is going to work for findByIdAndUpdate & findByIdAndDelete bcz behind the scenes they are just a shorthand for findOneAndUpdate & findOneAndDelete
 // QUERY MIDDLEWARE
+// runs before update and delete
 reviewSchema.pre(/^findOneAnd/, async function (next) {
-    this.r = await this.findOne();
-    console.log(this.r); // setting property to the query object
+    this.r = await this.findOne();// setting property to the query object
+    // console.log(this.r);
     next();
 });
 
-//Perfect time to calculate ratings average after saving ratings to the document
+// runs after update and delete
+//Perfect time to calculate ratings average after update/delete of averageRatings field to the document
 reviewSchema.post(/^findOneAnd/, async function (next) {
-    // await this.findOne(); does NOT work here, query has already executes
+    // await this.findOne(); does NOT work here, query has already executed
     await this.r.constructor.calcAverageRatings(this.r.tour);
 });
 
