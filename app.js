@@ -1,3 +1,5 @@
+//Path is a built-in module which is used to manipulate path names 
+const path = require('path');
 const express = require('express');
 //You are requiring the 'express' module, which is a popular Node.js module used to create web applications and APIs.
 const app = express();
@@ -14,6 +16,14 @@ const AppError = require('./utils/appError');
 const globalErrorController = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
+const reviewRouter = require('./routes/reviewRoutes');
+
+app.set('view engine', 'pug');
+app.set('views', path.join(__dirname, 'views'));
+
+//serving static files from a foler name public
+// app.use(express.static(`${__dirname}/public`));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // 1) GLOBAL MIDDLEWARES
 // all the middleware here 'app.use' are part of the middleware stack and are executed in order as they are written
@@ -61,8 +71,7 @@ app.use(hpp({
 })
 );  // clears up the duplicate query string
 
-//serving static files
-app.use(express.static(`${__dirname}/public`));
+
 
 // app.use((req, res, next) => {
 //     console.log('Hello from the  middleware👋');
@@ -96,6 +105,7 @@ app.use((req, res, next) => {
 
 
 
+
 // 3) ROUTES
 // app.get('/api/v1/tours', getAllTours);
 // app.post('/api/v1/tours', createTour);
@@ -105,9 +115,31 @@ app.use((req, res, next) => {
 //            OR
 // app.route('/api/v1/tours/:id').get(getTour).patch(updateTour).delete(deleteTour);
 
+
+// RENDERING TEMPLATES
+app.get('/', (req, res) => {
+    res.status(200).render('base', {
+        // this data will be passed to the base pug template 
+        tour: 'The Forest Hiker',
+        user: 'Manish'
+    });
+});
+
+app.get('/overview', (req, res) => {
+    res.status(200).render('overview', {
+        title: 'All tours'
+    });
+});
+
+app.get('/tour', (req, res) => {
+    res.status(200).render('tour', {
+        title: 'The Forest Hiker Tour'
+    });
+});
+
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
-
+app.use('/api/v1/reviews', reviewRouter);
 
 // If we are able to reach this point here it means that the request req res cycle was not yet finished at this point in our code 
 app.all('*', (req, res, next) => { //the routes that are not handled by the above routes
