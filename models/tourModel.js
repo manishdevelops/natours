@@ -35,7 +35,8 @@ const tourSchema = new mongoose.Schema({
         type: Number,
         default: 4.5,
         min: [1, 'Ratings must be above or equal 1.0'],
-        max: [5, 'Ratings must be below or equal to 5']
+        max: [5, 'Ratings must be below or equal to 5'],
+        set: val => Math.round(val * 10) / 10 // ex 4.66666, 46.6666, 47, 4.7
     },
     ratingsQuantity: {
         type: Number,
@@ -125,6 +126,7 @@ const tourSchema = new mongoose.Schema({
 // Adding Indexes
 tourSchema.index({ price: 1, ratingsAverage: -1 });
 tourSchema.index({ slug: 1 });
+tourSchema.index({ startLocation: '2dsphere' });
 
 // this virtual data is not going to be saved in DB 
 // durationWeeks -> virtual property name
@@ -210,10 +212,17 @@ tourSchema.pre(/^find/, function (next) {
 // });
 
 //3) AGGREGATE MIDDLEWARE : executes before aggregation happens
+// tourSchema.pre('aggregate', function (next) {
+//     // console.log(this);
+//     // this-> current aggregate OBJECT
+//     this.pipeline().unshift({ $match: { secretTour: { $ne: true } } }); //unshift -> adding stage -> .filter docs which should not be secreTour:true
+//     next();
+// });
 tourSchema.pre('aggregate', function (next) {
-    // console.log(this);
-    // this-> current aggregate OBJECT
-    this.pipeline().unshift({ $match: { secretTour: { $ne: true } } }); //unshift -> adding stage -> .filter docs which should not be secreTour:true
+    const things = this.pipeline()[0];
+    if (Object.keys(things)[0] !== '$geoNear') {
+        this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
+    }
     next();
 });
 
