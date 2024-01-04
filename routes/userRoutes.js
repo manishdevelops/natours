@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.post('/signup', authController.signup); // we need route for signup for only post data
 router.post('/login', authController.login);
+router.get('/logout', authController.logout);
 router.post('/forgotPassword', authController.forgotPassword); //sends email for reset password
 router.patch('/resetPassword/:token', authController.resetPassword); //receive token via email as well as set new password
 
