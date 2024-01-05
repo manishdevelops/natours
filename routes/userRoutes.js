@@ -2,6 +2,7 @@ const express = require('express');
 const userController = require('./../controllers/userController');
 const authController = require('./../controllers/authController');
 
+
 const router = express.Router();
 
 router.post('/signup', authController.signup); // we need route for signup for only post data
@@ -17,7 +18,7 @@ router.patch('/updatePassword', authController.updatePassword); //only works for
 
 router.get('/me', userController.getMe, userController.getUser);
 
-router.patch('/updateMe', userController.updateMe); // update user data of currently logged in user
+router.patch('/updateMe', userController.uploadUserPhoto, userController.resizeUserPhoto, userController.updateMe); // update user data of currently logged in user
 
 router.delete('/deleteMe', userController.deleteMe); // delete the current user
 
