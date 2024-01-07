@@ -11,12 +11,15 @@ const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
+const cookieParser = require('cookie-parser');
 
 const AppError = require('./utils/appError');
 const globalErrorController = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
+const viewRouter = require('./routes/viewRoutes');
+const bookingRouter = require('./routes/bookingRoutes');
 
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
@@ -25,11 +28,55 @@ app.set('views', path.join(__dirname, 'views'));
 // app.use(express.static(`${__dirname}/public`));
 app.use(express.static(path.join(__dirname, 'public')));
 
+
 // 1) GLOBAL MIDDLEWARES
 // all the middleware here 'app.use' are part of the middleware stack and are executed in order as they are written
 
 //Set Security HTTP Headers
-app.use(helmet());
+// app.use(helmet());
+
+const scriptSrcUrls = [
+    'https://api.tiles.mapbox.com/',
+    'https://api.mapbox.com/',
+    'https://cdnjs.cloudflare.com/',
+    'https://*.stripe.com/',
+    'https://js.stripe.com/',
+];
+const styleSrcUrls = [
+    'https://api.mapbox.com/',
+    'https://api.tiles.mapbox.com/',
+    'https://fonts.googleapis.com/',
+];
+const connectSrcUrls = [
+    'https://api.mapbox.com/',
+    'https://a.tiles.mapbox.com/',
+    'https://b.tiles.mapbox.com/',
+    'https://events.mapbox.com/',
+    'https://bundle.js:*',
+    'ws://127.0.0.1:*/',
+];
+const fontSrcUrls = ['fonts.googleapis.com', 'fonts.gstatic.com'];
+
+// Merging the two sets of directives
+const mergedDirectives = {
+    ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+    'script-src': ["'self'", 'https://unpkg.com', ...scriptSrcUrls],
+    'img-src': ["'self'", 'data:', 'https://*.tile.openstreetmap.org'],
+    connectSrc: ["'self'", ...connectSrcUrls],
+    // scriptSrc: ["'self'", ...scriptSrcUrls],
+    // styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
+    // workerSrc: ["'self'", 'blob:'],
+    frameSrc: ["'self'", 'https://*.stripe.com'],
+    // objectSrc: [],
+    // imgSrc: ["'self'", 'blob:', 'data:'],
+    // fontSrc: ["'self'", ...fontSrcUrls],
+};
+
+// Using the merged directives in the helmet.contentSecurityPolicy middleware
+app.use(helmet.contentSecurityPolicy({ directives: mergedDirectives }));
+
+// for turing off all CORS
+// app.use(helmet({ contentSecurityPolicy: false }));
 
 //accessing the env variable
 console.log(process.env.NODE_ENV);
@@ -51,6 +98,12 @@ app.use('/api', limiter); // counts every request with route `/api`
 
 //Middleware to parse JSON request bodies, read data from body into req.body
 app.use(express.json({ limit: '10kb' })); // limit size of data to be accepted. if data > 10 kb not accepted
+
+app.use(express.urlencoded({ extended: true, limit: '10kb' })); // parsing form data
+
+
+//pasrses data from the cookies
+app.use(cookieParser());
 
 // Data sanitization against NoSQL query middleware
 app.use(mongoSanitize()); // mongoSanitize returns a middleware fn. This middleware look at the body, the request query string and also Request.params and then it will filter out all of the '$' signs and '.'
@@ -83,7 +136,7 @@ app.use(hpp({
 //Test middlewares
 app.use((req, res, next) => {
     req.requestTime = new Date().toISOString();
-    // console.log(req.headers);
+    // console.log(req.cookies);
     next();
 });
 
@@ -115,31 +168,11 @@ app.use((req, res, next) => {
 //            OR
 // app.route('/api/v1/tours/:id').get(getTour).patch(updateTour).delete(deleteTour);
 
-
-// RENDERING TEMPLATES
-app.get('/', (req, res) => {
-    res.status(200).render('base', {
-        // this data will be passed to the base pug template 
-        tour: 'The Forest Hiker',
-        user: 'Manish'
-    });
-});
-
-app.get('/overview', (req, res) => {
-    res.status(200).render('overview', {
-        title: 'All tours'
-    });
-});
-
-app.get('/tour', (req, res) => {
-    res.status(200).render('tour', {
-        title: 'The Forest Hiker Tour'
-    });
-});
-
+app.use('/', viewRouter);
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
+app.use('/api/v1/bookings', bookingRouter);
 
 // If we are able to reach this point here it means that the request req res cycle was not yet finished at this point in our code 
 app.all('*', (req, res, next) => { //the routes that are not handled by the above routes

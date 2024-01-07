@@ -5,9 +5,9 @@ const AppError = require('./../utils/appError');
 const factory = require('./handlerFactory');
 
 exports.getCheckoutSession = catchAsync(async (req, res, next) => {
-    console.log(12)
-    //1) Get the currently booked tour\
+    //1) Get the currently booked tour
     const tour = await Tour.findById(req.params.tourId);
+    const tourPrice = tour.price * 100 * 83.19;
 
     //2) Create checkout session
     const session = await stripe.checkout.sessions.create({
@@ -22,7 +22,7 @@ exports.getCheckoutSession = catchAsync(async (req, res, next) => {
                 quantity: 1,
                 price_data: {
                     currency: 'inr',
-                    unit_amount: tour.price,
+                    unit_amount: tourPrice,
                     product_data: {
                         name: `${tour.name} Tour`,
                         description: tour.summary,
