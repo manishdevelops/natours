@@ -4,10 +4,13 @@ include _reviewCard
 //- content will be appended to the base.pug head after all the head , also we can use prepend istead of append
 block append head 
     link(rel='stylesheet' href='https://unpkg.com/leaflet@1.8.0/dist/leaflet.css'
-    integrity='sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ==' crossorigin='')
+    integrity='sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ==' crossorigin='') 
     script(src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"
     integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ=="
     crossorigin="")
+
+    script(src='https://js.stripe.com/v3/')
+
 
 
 mixin overviewBox(label, text, icon)
@@ -85,12 +88,17 @@ block content
     section.section-cta
         .cta
             .cta__img.cta__img--logo
-            img(src='/img/logo-white.png' alt='Natours logo')
+                img(src='/img/logo-white.png' alt='Natours logo')
             img.cta__img.cta__img--1(src=`/img/tours/${tour.images[1]}` alt='Tour Picture')
             img.cta__img.cta__img--2(src=`/img/tours/${tour.images[2]}` alt='Tour Picture')
             .cta__content
                 h2.heading-secondary What are you waiting for?
                 p.cta__text= `${tour.duration} days. 1 adventure. Infinite memories. Make it yours today!`
-                button.btn.btn--green.span-all-rows Book tour now!
+                if user
+                    button.btn.btn--green.span-all-rows#book-tour(data-tour-id=`${tour._id}`) Book tour now!
+                else
+                    a.btn.btn--green.span-all-rows(href='/login') Log in to book tour
 
     script(type="module" src='/js/leaflet.js')
+    script(src='/js/stripe.js')
+

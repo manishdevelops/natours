@@ -1,4 +1,4 @@
-const stripe = Stripe('pk_test_51OVsm3SFciT31UIQSY91CXczQu4wIqfhPjmiVxkshcB6FvVEBO6qyALNG4lL2M85dEY8xg88kRji9uzz1PHPXMQG00pVXyZPCH');
+var stripe = Stripe('pk_test_51OWe1ySDXx8ftkpKzKCSBC3ne0JDqhLbLjmzFSJDzLSYOS2d8T3XtQuZQdMeqlWQeM7Vy7Wdi0D3BfuyFWErOtr300CiYLnoyo');
 
 const alertHide = () => {
     const el = document.querySelector('.alert');

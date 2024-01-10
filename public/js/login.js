@@ -1,6 +1,14 @@
-// import axios from 'axios';
+const hideAlrt = () => {
+    const el = document.querySelector('.alert');
+    if (el) el.parentElement.removeChild(el);
+};
 
-// export
+const shwAlert = (type, msg) => {
+    const markup = `<div class="alert alert--${type}">${msg}</div>`;
+    document.querySelector('body').insertAdjacentHTML('afterbegin', markup);
+    window.setTimeout(hideAlrt, 5000);
+};
+
 const login = async (email, password) => {
     console.log("LOGIN");
     console.log(email, password);
@@ -15,14 +23,14 @@ const login = async (email, password) => {
             }
         });
         if (res.data.status.trim() === 'success') {
-            alert('Logged in successfully!');
+            shwAlert('success', 'Logged in successfully!');
             window.setTimeout(() => {
                 location.assign('/');
-
             }, 1500);
         }
     } catch (err) {
-        alert(err.response.data.message);
+        shwAlert('error', err.response.data.message);
+
     }
 };
 
@@ -33,15 +41,19 @@ const logout = async () => {
             url: 'http://127.0.0.1:3000/api/v1/users/logout',
         });
 
-        if (res.data.status.trim() === 'success') location.reload(true);
-        // res.clearCookie('jwt');
-        // res.status(200).json({ status: 'success' });
+        if (res.data.status.trim() === 'success') {
+            if (location.pathname === '/me') {
+                location.assign('/');
+            } else {
+                location.reload(true);
+            }
+        }
     } catch (err) {
-        showAlert('error', 'Error logging out! Try again.')
+        shwAlert('error', 'Error logging out! Try again.');
     }
 }
 
-const form = document.querySelector('.form');
+const form = document.querySelector('.form--login');
 if (form) {
     form.addEventListener('submit', (e) => {
         e.preventDefault();

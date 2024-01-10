@@ -7,15 +7,15 @@ class APIFeatures {
 
     filter() {
         // 1A) Filtering
-
         const queryObj = { ...this.queryString };
         const excludedFields = ['page', 'sort', 'limit', 'fields'];
         excludedFields.forEach(el => delete queryObj[el]);
 
         //1B) Advance filtering
         let queryStr = JSON.stringify(queryObj);
+        // console.log(queryObj);
         queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, match => `$${match}`);
-        this.query.find(JSON.parse(queryStr))
+        this.query.find(JSON.parse(queryStr));
 
         return this;
     }
@@ -32,7 +32,7 @@ class APIFeatures {
 
     limitFields() {
         if (this.queryString.fields) {
-            const fields = this.queryString.fields.split(',').join(' ');
+            const fields = this.queryString.fields.split(',').join(' ').replace(/password/g, '');
             this.query = this.query.select(fields); //whatever fields are there in the query will only be selected , rest not
         } else {
             this.query = this.query.select('-__v');   // This __v will never be selected(excluded)

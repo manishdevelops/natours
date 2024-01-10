@@ -1,7 +1,7 @@
 const leafmap = document.getElementById('map');
 const locations = JSON.parse(leafmap.dataset.locations);
-// export const displayMap = locations => {
 
+// export const displayMap = locations => {
 const map = L.map('map', { zoomControl: false });
 
 // ----------------------------------------------

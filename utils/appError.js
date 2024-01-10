@@ -7,6 +7,9 @@ class AppError extends Error {
         this.isOperational = true;
 
         Error.captureStackTrace(this, this.constructor);
+        //  used to capture and customize the stack trace of an error. It is typically used in custom error classes to improve the clarity of error logs and to remove internal implementation details from the stack trace.
+        //this -> current object
+        //this.construtor -> AppError class itself
     }
 }
 

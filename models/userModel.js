@@ -15,7 +15,10 @@ const userSchema = new mongoose.Schema({
         lowercase: true,  // converts to lowercase
         validate: [validator.isEmail, 'Please provide a valid email']
     },
-    photo: String,
+    photo: {
+        type: String,
+        default: 'default.jpg'
+    },
     role: {
         type: String,
         enum: ['user', 'guide', 'lead-guide', 'admin'], //specific to the app's domain
@@ -51,9 +54,12 @@ const userSchema = new mongoose.Schema({
 // executes between getting the data and saving it to DB. PERFECT TIME TO MANIPULATE DATA
 // this middleware runs when there is modification and creation of the password
 userSchema.pre('save', async function (next) {
+    //Only run this function if password was actually modified
     if (!this.isModified('password')) return next();
+    //Hash the password with cost of 12
     this.password = await bcrypt.hash(this.password, 12);
-    this.passwordConfirm = undefined; // deleting the confirmPassword field because we need it only for validation although it was required field but it doesn't mean to be in the database 
+    // deleting the confirmPassword field because we need it only for validation although it was required field but it doesn't mean to be in the database
+    this.passwordConfirm = undefined;
     next();
 });
 
